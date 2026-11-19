@@ -9,7 +9,7 @@ def main():
     username = input("Логин: ").strip()
     if not username or len(username) > 120:
         raise SystemExit("Логин должен содержать от 1 до 120 символов.")
-    password = getpass.getpass("Пароль (ввод скрыт): ")
+    password = getpass.getpass("Пароль — 6 цифр (ввод скрыт): ")
     if len(password) != 6 or not password.isascii() or not password.isdigit():
         raise SystemExit("Пароль должен состоять ровно из 6 цифр от 0 до 9.")
     if password != getpass.getpass("Повторите пароль: "):

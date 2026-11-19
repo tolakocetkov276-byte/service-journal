@@ -3,10 +3,14 @@ import os
 import secrets
 import sqlite3
 import json
+import hashlib
+import io
+import tempfile
+from contextlib import closing
 from pathlib import Path
 from datetime import timedelta
 from werkzeug.security import check_password_hash
-from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for, send_file
 from journal import DB_PATH, SERVICE_WARNING_THRESHOLD, add_machine, open_database, record_repair, service_status
 
 
@@ -39,7 +43,7 @@ def create_app(database=None, shared=False):
 
     @app.before_request
     def protect_forms():
-        if request.endpoint == "static":
+        if request.endpoint in ("static", "download_backup"):
             return
         if app.config["AUTH_REQUIRED"]:
             if not app.config["AUTH_USERNAME"] or not app.config["AUTH_PASSWORD_HASH"]:
@@ -55,7 +59,7 @@ def create_app(database=None, shared=False):
     @app.after_request
     def private_pages(response):
         if request.endpoint != "static":
-            response.headers["Cache-Control"] = "no-store"
+            response.headers["Cache-Control"] = "no-store, private"
         return response
 
     @app.route("/login", methods=["GET", "POST"])
@@ -84,6 +88,36 @@ def create_app(database=None, shared=False):
     @app.context_processor
     def helpers():
         return dict(service_status=service_status)
+
+    @app.get("/backup/database")
+    def download_backup():
+        # Отдельный ключ разрешает только получение резервной копии.
+        config_path = Path(app.config.get("BACKUP_AUTH_FILE") or
+                           Path(app.instance_path) / "backup-auth.json")
+        if not config_path.is_file():
+            abort(404)
+        expected = json.loads(config_path.read_text(encoding="utf-8"))["token_sha256"]
+        header = request.headers.get("Authorization", "")
+        if not header.startswith("Bearer "):
+            abort(401)
+        supplied = header[7:]
+        if len(supplied) != 64 or not secrets.compare_digest(
+                hashlib.sha256(supplied.encode()).hexdigest(), expected):
+            abort(401)
+        database = Path(app.config["DATABASE"])
+        if not database.is_file():
+            abort(404)
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder) / "backup.db"
+            with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)) as source:
+                with closing(sqlite3.connect(target)) as destination:
+                    source.backup(destination, pages=128, sleep=0.05)
+            content = target.read_bytes()
+        response = send_file(io.BytesIO(content), mimetype="application/vnd.sqlite3",
+                             as_attachment=True, download_name="journal-backup.db", max_age=0)
+        response.headers["Cache-Control"] = "no-store, private"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
 
     def number(field):
         try:
@@ -121,7 +155,7 @@ def create_app(database=None, shared=False):
                         number("hours"), number("next_service"))
             flash("Техника добавлена.", "success")
         except sqlite3.IntegrityError:
-            flash("Такой инвентарный номер уже существует.", "error")
+            flash("Такой номер погрузчика уже существует.", "error")
         except ValueError as error:
             flash(str(error), "error")
         return redirect(url_for("index"), code=303)

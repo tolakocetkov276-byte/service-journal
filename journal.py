@@ -123,7 +123,7 @@ def show_upcoming_service(db):
         print(f"{machine['name']} | № {machine['number']} | {status}")
 
 def search_machines(db):
-    query = ask_text("Введите модель или инвентарный номер: ")
+    query = ask_text("Введите модель или номер погрузчика: ")
 
     machines = db.execute(
         "SELECT * FROM machines "
@@ -191,7 +191,7 @@ def main():
                 if choice == "1":
                     show_machines(db)
                 elif choice == "2":
-                    add_machine(db, ask_text("Модель: "), ask_text("Инвентарный номер: "),
+                    add_machine(db, ask_text("Модель: "), ask_text("Номер погрузчика: "),
                                 ask_number("Текущие моточасы: "),
                                 ask_number("На какой наработке следующее ТО: "))
                     print("Техника добавлена.")
@@ -227,7 +227,7 @@ def main():
                 else:
                     print("Выберите пункт из меню.")
             except sqlite3.IntegrityError:
-                print("Не удалось сохранить: такой инвентарный номер уже существует "
+                print("Не удалось сохранить: такой номер погрузчика уже существует "
                       "или данные не соответствуют ограничениям базы.")
             except ValueError as error:
                 print(error)
