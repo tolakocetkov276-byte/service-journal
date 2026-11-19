@@ -10,8 +10,8 @@ def main():
     if not username or len(username) > 120:
         raise SystemExit("Логин должен содержать от 1 до 120 символов.")
     password = getpass.getpass("Пароль (ввод скрыт): ")
-    if len(password) < 12:
-        raise SystemExit("Используйте пароль длиной не менее 12 символов.")
+    if len(password) != 6 or not password.isascii() or not password.isdigit():
+        raise SystemExit("Пароль должен состоять ровно из 6 цифр от 0 до 9.")
     if password != getpass.getpass("Повторите пароль: "):
         raise SystemExit("Пароли не совпадают.")
     folder = Path(__file__).resolve().parent / "instance"
