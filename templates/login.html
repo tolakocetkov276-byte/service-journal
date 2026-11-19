@@ -1,0 +1,3 @@
+{% extends 'base.html' %}{% block title %}Вход — Сервисный журнал{% endblock %}{% block content %}
+<section class="panel login-panel"><p class="eyebrow">ЛИЧНЫЙ ЖУРНАЛ</p><h1>Вход в систему</h1><p class="muted">Введите логин и пароль для работы с техникой.</p>{% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}<form method="post"><input type="hidden" name="csrf" value="{{ session.csrf }}"><label>Логин<input name="username" autocomplete="username" maxlength="120" required autofocus></label><label>Пароль<input type="password" name="password" autocomplete="current-password" required></label><button class="button" type="submit">Войти</button></form></section>
+{% endblock %}
