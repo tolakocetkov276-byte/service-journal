@@ -1,0 +1,12 @@
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+CHAT_CONTEXT.md
+*.bak
+__pycache__/
+*.py[cod]
+.venv/
+instance/
+.env
+.env.*
