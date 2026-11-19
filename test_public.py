@@ -22,6 +22,7 @@ class PublicSetupTests(unittest.TestCase):
                 second = module.create_public_app()
             self.assertEqual(first.config['SECRET_KEY'], second.config['SECRET_KEY'])
             self.assertEqual(first.config['DATABASE'], str(root / 'instance' / 'public.db'))
+            first.config['AUTH_REQUIRED'] = False
             self.assertEqual(first.test_client().get('/').status_code, 200)
             self.assertTrue((root / 'instance' / 'public.db').exists())
             self.assertEqual(local.read_bytes(), b'local-data-must-not-change')
